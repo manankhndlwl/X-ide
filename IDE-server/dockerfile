@@ -1,0 +1,20 @@
+# Golang base image
+FROM golang:latest
+
+# Set working directory inside container
+WORKDIR /app
+
+# Copy project files
+COPY . .
+
+# Install dependencies (agar Node.js bhi chahiye toh install karo)
+RUN apt-get update && apt-get install -y nodejs npm
+
+# Install project dependencies (agar koi ho)
+RUN npm install
+
+# Expose port
+EXPOSE 9000
+
+# Start the IDE execution server
+CMD ["node", "index.js"]

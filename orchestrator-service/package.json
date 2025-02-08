@@ -1,5 +1,5 @@
 {
-  "name": "user",
+  "name": "orchestrator-service",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
@@ -10,6 +10,8 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "express": "^4.21.2"
+    "@aws-sdk/client-ecs": "^3.744.0",
+    "express": "^4.21.2",
+    "jsonwebtoken": "^9.0.2"
   }
 }
