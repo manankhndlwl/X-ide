@@ -17,4 +17,4 @@ RUN npm install
 EXPOSE 9000
 
 # Start the IDE execution server
-CMD ["node", "index.js"]
+CMD ["npm", "run","dev"]

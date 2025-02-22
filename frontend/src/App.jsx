@@ -42,7 +42,7 @@ function App() {
   }, [selectedFileContent]);
 
   const getFileTree = async () => {
-    const response = await fetch("http://localhost:9000/files");
+    const response = await fetch("http://13.200.214.242:9000/files");
     const result = await response.json();
     setFileTree(result.tree);
   };
@@ -54,7 +54,7 @@ function App() {
   const getFileContents = useCallback(async () => {
     if (!selectedFile) return;
     const response = await fetch(
-      `http://localhost:9000/files/content?path=${selectedFile}`
+      `http://13.200.214.242:9000/files/content?path=${selectedFile}`
     );
     const result = await response.json();
     setSelectedFileContent(result.content);

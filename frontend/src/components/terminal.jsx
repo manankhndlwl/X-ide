@@ -23,6 +23,7 @@ const Terminal = () => {
     });
 
     function onTerminalData(data) {
+      console.log("🚀 ~ onTerminalData ~ data:", data);
       term.write(data);
     }
 

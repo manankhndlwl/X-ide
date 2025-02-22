@@ -8,11 +8,20 @@ const {
 } = require("@aws-sdk/client-ecs");
 const app = express();
 const jwt = require("jsonwebtoken");
+const dotenv = require("dotenv");
+const {
+  EC2Client,
+  DescribeNetworkInterfacesCommand,
+} = require("@aws-sdk/client-ec2");
 
 app.use(express.json());
 
+dotenv.config();
+
 // Initialize ECS client
 const ecs = new ECSClient({ region: process.env.AWS_REGION });
+// initialize ec2 client
+const ec2Client = new EC2Client({ region: "ap-south-1" });
 
 // Store task info for each user
 const userTasks = new Map();
@@ -20,7 +29,7 @@ const userTasks = new Map();
 // Configuration for different environments
 const environments = {
   golang: {
-    taskDefinition: "golang-ide:1",
+    taskDefinition: "golang-ide:3",
     containerName: "golang-ide:latest",
   },
 };
@@ -53,17 +62,33 @@ async function launchTask(userId, environment) {
   // Wait for task to be running and get container info
   const taskInfo = await waitForTask(task.taskArn);
 
-  // Get the public IP and port from the network interface
-  const containerInfo = taskInfo.containers.find(
-    (c) => c.name === config.containerName
+  // Get the public IP from the ENI attachment
+  const eniId = taskInfo?.attachments[0]?.details.find(
+    (d) => d.name === "networkInterfaceId"
+  )?.value;
+
+  if (!eniId) throw new Error("ENI ID not found!");
+
+  // Step 2: Get Public IP from ENI ID
+  const eniDetails = await ec2Client.send(
+    new DescribeNetworkInterfacesCommand({ NetworkInterfaceIds: [eniId] })
   );
-  const networkBinding = containerInfo.networkBindings[0];
+
+  const publicIp = eniDetails.NetworkInterfaces[0]?.Association?.PublicIp;
+
+  if (!publicIp) {
+    throw new Error(
+      "No public IP found for task - check subnet and VPC configuration"
+    );
+  }
+
+  // For Fargate tasks, we use the container port defined in the task definition
+
+  const containerPort = 9000;
 
   return {
     taskArn: task.taskArn,
-    url: `http://${
-      taskInfo.attachments[0].details.find((d) => d.name === "publicIp").value
-    }:${networkBinding.hostPort}`,
+    url: `http://${publicIp}:${containerPort}`,
   };
 }
 
@@ -113,10 +138,10 @@ function authenticateToken(req, res, next) {
 }
 
 // Routes
-app.post("/environments", authenticateToken, async (req, res) => {
+app.post("/environments", async (req, res) => {
   try {
     const { environment } = req.body;
-    const userId = req.user.id;
+    const userId = "1";
 
     // Clean up existing task if any
     if (userTasks.has(userId)) {
@@ -136,9 +161,9 @@ app.post("/environments", authenticateToken, async (req, res) => {
   }
 });
 
-app.delete("/environments", authenticateToken, async (req, res) => {
+app.delete("/environments", async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = "1";
     if (userTasks.has(userId)) {
       await stopTask(userTasks.get(userId).taskArn);
       userTasks.delete(userId);

@@ -21,6 +21,7 @@ const ptyProcess = pty.spawn("bash", [], {
   cwd: process.env.INIT_CWD + "/user",
   env: process.env,
 });
+console.log("🚀 ~ ptyProcess:", ptyProcess);
 
 const io = new SocketServer({
   cors: "*",
@@ -34,6 +35,7 @@ chokidar.watch("./user").on("all", (event, path) => {
 
 // for sending data to frontend from terminal
 ptyProcess.onData((data) => {
+  console.log("🚀 ~ ptyProcess.onData ~ data:", data);
   io.emit("terminal:data", data);
 });
 
@@ -64,7 +66,7 @@ app.get("/files/content", async (req, res) => {
   return res.json({ content });
 });
 
-server.listen(process.env.PORT, () => {
+server.listen(process.env.PORT || 9000, () => {
   console.log(`DOCKER container is running at port ${process.env.PORT}`);
 });
 
